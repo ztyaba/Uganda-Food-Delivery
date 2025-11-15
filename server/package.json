@@ -1,0 +1,17 @@
+{
+  "name": "uganda-food-delivery-server",
+  "version": "1.0.0",
+  "description": "Secure, real-time backend for the Uganda Food Delivery platform",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "keywords": [
+    "food-delivery",
+    "realtime",
+    "payments"
+  ],
+  "author": "",
+  "license": "MIT"
+}
