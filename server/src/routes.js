@@ -295,6 +295,12 @@ async function handleLogin(req, res) {
       return badRequest(res, 'Email and password are required');
     }
     const db = readDb();
+    const matchingAccount = db.users.find((item) => item.email.toLowerCase() === String(email).toLowerCase());
+    if (!matchingAccount || !verifyPassword(password, matchingAccount.password)) {
+      return unauthorized(res);
+    }
+    const token = createToken({ sub: matchingAccount.id, role: matchingAccount.role });
+    sendJson(res, 200, { token, user: sanitizeUser(matchingAccount) });
     const user = db.users.find((item) => item.email.toLowerCase() === String(email).toLowerCase());
     if (!user || !verifyPassword(password, user.password)) {
       return unauthorized(res);
@@ -320,6 +326,14 @@ function authenticateRequest(req, res) {
     unauthorized(res);
     return null;
   }
+  const authenticatedUser = sanitizeUser(userRecord);
+  const vendor = authenticatedUser.vendorId
+    ? db.vendors.find((item) => item.id === authenticatedUser.vendorId) || null
+    : null;
+  const driver = authenticatedUser.driverId
+    ? db.drivers.find((item) => item.id === authenticatedUser.driverId) || null
+    : null;
+  return { user: authenticatedUser, db, vendor, driver };
   const user = sanitizeUser(userRecord);
   const vendor = user.vendorId ? db.vendors.find((item) => item.id === user.vendorId) || null : null;
   const driver = user.driverId ? db.drivers.find((item) => item.id === user.driverId) || null : null;
@@ -1142,6 +1156,8 @@ export async function handleApiRequest(req, res) {
       return unauthorized(res);
     }
     const db = readDb();
+    const streamUser = db.users.find((item) => item.id === payload.sub);
+    if (!streamUser) {
     const user = db.users.find((item) => item.id === payload.sub);
     if (!user) {
       return unauthorized(res);
@@ -1152,6 +1168,8 @@ export async function handleApiRequest(req, res) {
       Connection: 'keep-alive'
     });
     res.write(`event: ready\ndata: ${JSON.stringify({ message: 'connected' })}\n\n`);
+    addClient(res, { userId: streamUser.id });
+    broadcast('presence_update', { online: true, user: sanitizeUser(streamUser) });
     addClient(res, { userId: user.id });
     broadcast('presence_update', { online: true, user: sanitizeUser(user) });
     return;
