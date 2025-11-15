@@ -38,6 +38,8 @@ export default function VendorDashboard() {
       offAuto();
     };
   }, [ready, subscribe, loadDashboard]);
+
+  useEffect(() => {
     if (!socket) return undefined;
     const refresh = () => loadDashboard();
     socket.on('order:updated', refresh);
