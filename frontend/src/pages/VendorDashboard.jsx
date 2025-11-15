@@ -1,15 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi.js';
 import MetricsPanel from '../components/MetricsPanel.jsx';
+import { useRealtime } from '../contexts/RealtimeContext.jsx';
 
 export default function VendorDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { ready, subscribe } = useRealtime();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     api.get('/vendor/dashboard').then((response) => setData(response.data));
   }, [api]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const refresh = () => loadDashboard();
+    const offUpdated = subscribe('order:updated', refresh);
+    const offNew = subscribe('order:new', refresh);
+    const offAccepted = subscribe('order:driverAccepted', refresh);
+    const offPicked = subscribe('order:pickedUp', refresh);
+    const offDelivered = subscribe('order:delivered', refresh);
+    const offPaid = subscribe('payout:completed', refresh);
+    const offAuto = subscribe('payout:auto', refresh);
+    return () => {
+      offUpdated();
+      offNew();
+      offAccepted();
+      offPicked();
+      offDelivered();
+      offPaid();
+      offAuto();
+    };
+  }, [ready, subscribe, loadDashboard]);
 
   if (!data) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;

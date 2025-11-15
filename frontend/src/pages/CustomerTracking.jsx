@@ -1,29 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi.js';
 import OrderTimeline from '../components/OrderTimeline.jsx';
 import LiveMap from '../components/LiveMap.jsx';
+import { useRealtime } from '../contexts/RealtimeContext.jsx';
 
 export default function CustomerTracking() {
   const { id } = useParams();
   const api = useApi();
+  const { ready, subscribe } = useRealtime();
   const [order, setOrder] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchOrder = () => {
-      api.get(`/customer/orders/${id}`).then((response) => {
-        if (!cancelled) setOrder(response.data.order);
-      });
-    };
-    fetchOrder();
-    const interval = setInterval(fetchOrder, 10000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+  const loadOrder = useCallback(() => {
+    api.get(`/customer/orders/${id}`).then((response) => setOrder(response.data.order));
   }, [api, id]);
+
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const offUpdated = subscribe('order:updated', (payload) => {
+      if (payload?.order?.id === id) {
+        setOrder(payload.order);
+      }
+    });
+    const offProgress = subscribe('order:progress', (payload) => {
+      if (payload?.orderId === id) {
+        loadOrder();
+      }
+    });
+    return () => {
+      offUpdated();
+      offProgress();
+    };
+  }, [ready, subscribe, id, loadOrder]);
 
   if (!order) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;

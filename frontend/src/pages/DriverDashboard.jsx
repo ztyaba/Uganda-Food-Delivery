@@ -1,16 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi.js';
 import WalletSummary from '../components/WalletSummary.jsx';
 import JobCard from '../components/JobCard.jsx';
+import { useRealtime } from '../contexts/RealtimeContext.jsx';
 
 export default function DriverDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { ready, subscribe } = useRealtime();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     api.get('/driver/dashboard').then((response) => setData(response.data));
   }, [api]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const refresh = () => loadDashboard();
+    const offAvailable = subscribe('order:available', refresh);
+    const offUpdated = subscribe('order:updated', refresh);
+    const offTaken = subscribe('order:taken', refresh);
+    const offPaid = subscribe('payout:completed', refresh);
+    const offAuto = subscribe('payout:auto', refresh);
+    return () => {
+      offAvailable();
+      offUpdated();
+      offTaken();
+      offPaid();
+      offAuto();
+    };
+  }, [ready, subscribe, loadDashboard]);
 
   if (!data) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;
@@ -34,7 +57,7 @@ export default function DriverDashboard() {
       <WalletSummary wallet={data.summary.wallet} title="Driver wallet" />
       <div className="grid gap-4 md:grid-cols-2">
         {data.available.slice(0, 2).map((order) => (
-          <JobCard key={order.id} order={order} variant="available" />
+          <JobCard key={order.id} order={order} variant="available" disabled />
         ))}
       </div>
     </section>

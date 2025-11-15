@@ -102,6 +102,51 @@ function settleDriver(orderId, driverId, amount) {
   });
 }
 
+function payDriverPayout({ orderId, vendorId, driverId, amount, mode = 'manual' }) {
+  return transact((db) => {
+    const vendorWallet = db.wallets.find((wallet) => wallet.ownerType === 'vendor' && wallet.ownerId === vendorId);
+    const driverWallet = db.wallets.find((wallet) => wallet.ownerType === 'driver' && wallet.ownerId === driverId);
+    if (!vendorWallet || !driverWallet) {
+      throw new Error('Wallets missing for payout');
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      const error = new Error('Invalid payout amount');
+      error.status = 400;
+      throw error;
+    }
+    let remaining = amount;
+    if (vendorWallet.pending >= remaining) {
+      vendorWallet.pending -= remaining;
+      remaining = 0;
+    } else {
+      remaining -= vendorWallet.pending;
+      vendorWallet.pending = 0;
+    }
+    if (remaining > 0) {
+      if (vendorWallet.balance < remaining) {
+        const error = new Error('Insufficient vendor balance for payout');
+        error.status = 400;
+        throw error;
+      }
+      vendorWallet.balance -= remaining;
+    }
+    driverWallet.balance += amount;
+    db.notifications.push({
+      id: `notif_${Date.now()}`,
+      type: mode === 'auto' ? 'driver_autopaid' : 'driver_paid',
+      orderId,
+      vendorId,
+      driverId,
+      amount,
+      createdAt: new Date().toISOString()
+    });
+    return {
+      vendorWallet,
+      driverWallet
+    };
+  });
+}
+
 function requestPayout(walletId, amount, destination) {
   return transact((db) => {
     const wallet = db.wallets.find((entry) => entry.id === walletId);
@@ -165,6 +210,7 @@ module.exports = {
   reserveDriverShare,
   settleVendor,
   settleDriver,
+  payDriverPayout,
   requestPayout,
   releasePayout,
   walletSummary
