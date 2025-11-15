@@ -1,4 +1,5 @@
 const path = require('path');
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -6,6 +7,7 @@ const helmet = require('helmet');
 const apiRouter = require('./routes');
 const { ensureDatabase } = require('./utils/bootstrap');
 const { logger } = require('./utils/logger');
+const { initRealtime } = require('./utils/realtime');
 
 const PORT = process.env.PORT || 4000;
 
@@ -39,8 +41,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+initRealtime(server);
+
+server.listen(PORT, () => {
   logger.info(`API listening on port ${PORT}`);
 });
 
-module.exports = app;
+module.exports = { app, server };
