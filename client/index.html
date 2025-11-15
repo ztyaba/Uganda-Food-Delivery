@@ -2,6 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uganda Food Delivery</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Uganda Food Delivery</h1>
+      <p>Find your next meal from local favourites.</p>
+    </header>
+
+    <main>
+      <section class="restaurants">
+        <h2>Restaurants</h2>
+        <div id="restaurant-list" class="restaurant-list"></div>
+      </section>
+
+      <section class="cart">
+        <h2>Your Order</h2>
+        <div id="cart-items" class="cart-items"></div>
+        <button id="place-order" class="primary" disabled>Place order</button>
+        <div id="order-status" class="order-status"></div>
+      </section>
+    </main>
+
+    <template id="restaurant-template">
+      <article class="restaurant">
+        <h3 class="restaurant-name"></h3>
+        <p class="restaurant-meta"></p>
+        <ul class="menu"></ul>
+      </article>
+    </template>
+
+    <template id="menu-item-template">
+      <li>
+        <button class="add-item"></button>
+        <span class="price"></span>
+      </li>
+    </template>
+
+    <script src="api.js"></script>
+    <script src="app.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Uganda Food Delivery</title>
     <link rel="stylesheet" href="/styles.css" />

@@ -1,3 +1,11 @@
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { handleApiRequest } = require('./routes');
+const { DB_PATH } = require('./db');
+
+const ROOT_DIR = path.join(__dirname, '..', '..');
+const CLIENT_DIR = path.join(ROOT_DIR, 'client');
 import http from 'http';
 import { access, readFile } from 'fs/promises';
 import { createReadStream } from 'fs';
@@ -19,6 +27,10 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg'
+};
+
+function serveStatic(req, res) {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
@@ -38,6 +50,24 @@ async function serveStatic(req, res) {
   if (pathname === '/') {
     pathname = '/index.html';
   }
+  const filePath = path.join(CLIENT_DIR, pathname);
+  if (!filePath.startsWith(CLIENT_DIR)) {
+    res.writeHead(403);
+    res.end();
+    return;
+  }
+  if (!fs.existsSync(filePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
+  const ext = path.extname(filePath).toLowerCase();
+  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  res.writeHead(200, { 'Content-Type': contentType });
+  fs.createReadStream(filePath).pipe(res);
+}
+
+function handleHealth(res) {
   const filePath = join(CLIENT_DIR, pathname);
   const exists = await fileExists(filePath);
   if (!exists) {
@@ -81,6 +111,28 @@ function handleHealth(req, res) {
     JSON.stringify({
       status: 'ok',
       time: new Date().toISOString(),
+      database: DB_PATH
+    })
+  );
+}
+
+const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/api/')) {
+    handleApiRequest(req, res);
+    return;
+  }
+
+  if (req.url === '/health') {
+    handleHealth(res);
+    return;
+  }
+
+  serveStatic(req, res);
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
       dbPath: getDbPath(),
       activeStreams: getClientCount()
     })
