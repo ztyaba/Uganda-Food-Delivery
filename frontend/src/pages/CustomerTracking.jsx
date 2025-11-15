@@ -10,6 +10,7 @@ export default function CustomerTracking() {
   const { id } = useParams();
   const api = useApi();
   const { ready, subscribe } = useRealtime();
+  const { socket } = useRealtime();
   const [order, setOrder] = useState(null);
 
   const loadOrder = useCallback(() => {
@@ -37,6 +38,29 @@ export default function CustomerTracking() {
       offProgress();
     };
   }, [ready, subscribe, id, loadOrder]);
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const handleUpdate = (payload) => {
+      if (payload?.order?.id === id) {
+        setOrder(payload.order);
+      }
+    };
+    const handleProgress = (payload) => {
+      if (payload?.orderId === id) {
+        loadOrder();
+      }
+    };
+    socket.on('order:updated', handleUpdate);
+    socket.on('order:progress', handleProgress);
+    return () => {
+      socket.off('order:updated', handleUpdate);
+      socket.off('order:progress', handleProgress);
+    };
+  }, [socket, id, loadOrder]);
 
   if (!order) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;

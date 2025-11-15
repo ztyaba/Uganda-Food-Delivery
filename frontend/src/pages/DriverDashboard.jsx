@@ -9,6 +9,7 @@ export default function DriverDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
   const { ready, subscribe } = useRealtime();
+  const { socket } = useRealtime();
 
   const loadDashboard = useCallback(() => {
     api.get('/driver/dashboard').then((response) => setData(response.data));
@@ -34,6 +35,21 @@ export default function DriverDashboard() {
       offAuto();
     };
   }, [ready, subscribe, loadDashboard]);
+    if (!socket) return undefined;
+    const refresh = () => loadDashboard();
+    socket.on('order:available', refresh);
+    socket.on('order:updated', refresh);
+    socket.on('order:taken', refresh);
+    socket.on('payout:completed', refresh);
+    socket.on('payout:auto', refresh);
+    return () => {
+      socket.off('order:available', refresh);
+      socket.off('order:updated', refresh);
+      socket.off('order:taken', refresh);
+      socket.off('payout:completed', refresh);
+      socket.off('payout:auto', refresh);
+    };
+  }, [socket, loadDashboard]);
 
   if (!data) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;

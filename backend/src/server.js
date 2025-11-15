@@ -7,6 +7,7 @@ const helmet = require('helmet');
 const apiRouter = require('./routes');
 const { ensureDatabase } = require('./utils/bootstrap');
 const { logger } = require('./utils/logger');
+const { initRealtime } = require('./utils/realtime');
 
 const PORT = process.env.PORT || 4000;
 
@@ -41,6 +42,8 @@ app.use((err, req, res, next) => {
 });
 
 const server = http.createServer(app);
+
+initRealtime(server);
 
 server.listen(PORT, () => {
   logger.info(`API listening on port ${PORT}`);
