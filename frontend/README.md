@@ -19,6 +19,11 @@ npm start
 The development server listens on port 5173. Configure the backend origin via environment variables in a `.env` file:
 
 ```
+VITE_API_BASE_URL=https://your-api.onrender.com
+```
+
+> **Tip:** Provide the backend origin without a trailing slash. The frontend automatically appends `/api` to reach the REST routes, so `https://your-api.onrender.com` becomes `https://your-api.onrender.com/api`.
+
 VITE_API_BASE_URL=https://your-api.onrender.com/api
 ```
 

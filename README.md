@@ -41,6 +41,7 @@ cd frontend
 npm install
 npm start
 ```
+The React app launches on `http://localhost:5173` and expects the backend to be reachable at `VITE_API_BASE_URL` (defaults to `http://localhost:4000/api`). The URL should point to your backend root without a trailing slash; the UI will automatically append `/api` as needed.
 The React app launches on `http://localhost:5173` and expects the backend to be reachable at `VITE_API_BASE_URL` (defaults to `http://localhost:4000/api`).
 
 ## Demo credentials
