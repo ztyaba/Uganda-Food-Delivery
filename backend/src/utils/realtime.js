@@ -1,6 +1,10 @@
+const { Server } = require('socket.io');
+const { verifyToken } = require('./token');
+const { findById: findUserById } = require('../models/userModel');
+
 const CHANNEL_SUBSCRIBERS = new Map();
 
-function clone(value) {
+function deepClone(value) {
   if (value === undefined || value === null) {
     return value;
   }
@@ -11,7 +15,7 @@ function clone(value) {
   }
 }
 
-function preparePayload(payload) {
+function safeSerialize(payload) {
   if (payload === undefined) {
     return 'null';
   }
@@ -22,7 +26,7 @@ function preparePayload(payload) {
   }
 }
 
-function deliver(res, eventName, serializedPayload) {
+function sendFrame(res, eventName, serializedPayload) {
   if (!res || res.writableEnded) {
     return false;
   }
@@ -57,16 +61,16 @@ function registerClient(res, channels) {
   };
 }
 
-function emitToChannel(channel, eventName, payload) {
+function emitSseToChannel(channel, eventName, payload) {
   const subscribers = CHANNEL_SUBSCRIBERS.get(channel);
   if (!subscribers || subscribers.size === 0) {
     return;
   }
 
-  const serialized = preparePayload(payload);
+  const serialized = safeSerialize(payload);
   for (const res of subscribers) {
-    const delivered = deliver(res, eventName, serialized);
-    if (!delivered) {
+    const ok = sendFrame(res, eventName, serialized);
+    if (!ok) {
       subscribers.delete(res);
     }
   }
@@ -76,33 +80,27 @@ function emitToChannel(channel, eventName, payload) {
   }
 }
 
-function emitToRole(role, eventName, payload) {
-  emitToChannel(`role:${role}`, eventName, payload);
+function emitSseToRole(role, eventName, payload) {
+  emitSseToChannel(`role:${role}`, eventName, payload);
 }
 
-function emitToUser(userId, eventName, payload) {
-  emitToChannel(`user:${userId}`, eventName, payload);
+function emitSseToUser(userId, eventName, payload) {
+  emitSseToChannel(`user:${userId}`, eventName, payload);
 }
 
-function notifyOrderUpdate(order) {
-  if (!order) return;
-  const payload = { order: clone(order) };
-  if (order.customerId) {
-    emitToUser(order.customerId, 'order:updated', payload);
-  }
-  if (order.vendorId) {
-    emitToUser(order.vendorId, 'order:updated', payload);
-  }
-  if (order.assignedDriver) {
-    emitToUser(order.assignedDriver, 'order:updated', payload);
-const { Server } = require('socket.io');
-const { verifyToken } = require('./token');
-const { findById: findUserById } = require('../models/userModel');
+function sendDirect(res, eventName, payload) {
+  const serialized = safeSerialize(payload);
+  sendFrame(res, eventName, serialized);
+}
 
 let ioInstance = null;
 
-function sanitizePayload(payload) {
-  return JSON.parse(JSON.stringify(payload));
+function getIo() {
+  return ioInstance;
+}
+
+function ensureSocketPayload(payload) {
+  return deepClone(payload);
 }
 
 function initRealtime(server) {
@@ -121,7 +119,9 @@ function initRealtime(server) {
         if (!user) {
           throw new Error('User not found');
         }
+
         socket.data.user = { id: user.id, role: user.role };
+
         socket.join(`role:${user.role}`);
         socket.join(`user:${user.id}`);
         if (user.role === 'vendor') {
@@ -133,95 +133,104 @@ function initRealtime(server) {
         if (user.role === 'customer') {
           socket.join(`customer:${user.id}`);
         }
+
         socket.emit('realtime:ready', { user: socket.data.user });
       } catch (error) {
         socket.emit('realtime:error', { message: 'Authentication failed' });
         socket.disconnect(true);
       }
     });
+
+    const heartbeat = setInterval(() => {
+      socket.emit('ping', { ts: Date.now() });
+    }, 25000);
+
+    socket.on('disconnect', () => {
+      clearInterval(heartbeat);
+    });
   });
 }
 
-function getIo() {
-  return ioInstance;
+function emitSocketToRole(role, eventName, payload) {
+  const io = getIo();
+  if (!io) {
+    return;
+  }
+  io.to(`role:${role}`).emit(eventName, ensureSocketPayload(payload));
 }
 
-function emitToRole(role, event, payload) {
+function emitSocketToUser(userId, eventName, payload) {
   const io = getIo();
-  if (!io) return;
-  io.to(`role:${role}`).emit(event, sanitizePayload(payload));
+  if (!io) {
+    return;
+  }
+  io.to(`user:${userId}`).emit(eventName, ensureSocketPayload(payload));
 }
 
-function emitToUser(userId, event, payload) {
-  const io = getIo();
-  if (!io) return;
-  io.to(`user:${userId}`).emit(event, sanitizePayload(payload));
+function broadcastToRole(role, eventName, payload) {
+  emitSseToRole(role, eventName, payload);
+  emitSocketToRole(role, eventName, payload);
+}
+
+function broadcastToUser(userId, eventName, payload) {
+  emitSseToUser(userId, eventName, payload);
+  emitSocketToUser(userId, eventName, payload);
 }
 
 function notifyOrderUpdate(order) {
-  const io = getIo();
-  if (!io || !order) return;
-  const payload = sanitizePayload({ order });
+  if (!order) {
+    return;
+  }
+  const payload = { order: deepClone(order) };
   if (order.customerId) {
-    io.to(`user:${order.customerId}`).emit('order:updated', payload);
+    broadcastToUser(order.customerId, 'order:updated', payload);
   }
   if (order.vendorId) {
-    io.to(`user:${order.vendorId}`).emit('order:updated', payload);
+    broadcastToUser(order.vendorId, 'order:updated', payload);
   }
   if (order.assignedDriver) {
-    io.to(`user:${order.assignedDriver}`).emit('order:updated', payload);
+    broadcastToUser(order.assignedDriver, 'order:updated', payload);
   }
 }
 
 function notifyDriversOfAvailability(order) {
-  if (!order) return;
-  emitToRole('driver', 'order:available', { order: clone(order) });
-  emitToRole('driver', 'order:available', { order });
+  if (!order) {
+    return;
+  }
+  broadcastToRole('driver', 'order:available', { order: deepClone(order) });
 }
 
 function notifyDriversOrderTaken(orderId, driverId) {
-  emitToRole('driver', 'order:taken', { orderId, driverId });
+  broadcastToRole('driver', 'order:taken', { orderId, driverId });
 }
 
 function notifyVendor(vendorId, eventName, payload) {
-  if (!vendorId) return;
-  emitToUser(vendorId, eventName, payload);
+  if (!vendorId) {
+    return;
+  }
+  broadcastToUser(vendorId, eventName, payload);
 }
 
 function notifyDriver(driverId, eventName, payload) {
-  if (!driverId) return;
-  emitToUser(driverId, eventName, payload);
+  if (!driverId) {
+    return;
+  }
+  broadcastToUser(driverId, eventName, payload);
 }
 
 function notifyCustomer(customerId, eventName, payload) {
-  if (!customerId) return;
-  emitToUser(customerId, eventName, payload);
-}
-
-function sendDirect(res, eventName, payload) {
-  const serialized = preparePayload(payload);
-  deliver(res, eventName, serialized);
+  if (!customerId) {
+    return;
+  }
+  broadcastToUser(customerId, eventName, payload);
 }
 
 module.exports = {
   registerClient,
   sendDirect,
-function notifyVendor(vendorId, event, payload) {
-  emitToUser(vendorId, event, payload);
-}
-
-function notifyDriver(driverId, event, payload) {
-  emitToUser(driverId, event, payload);
-}
-
-function notifyCustomer(customerId, event, payload) {
-  emitToUser(customerId, event, payload);
-}
-
-module.exports = {
   initRealtime,
-  emitToRole,
-  emitToUser,
+  emitToRole: broadcastToRole,
+  emitToUser: broadcastToUser,
   notifyOrderUpdate,
   notifyDriversOfAvailability,
   notifyDriversOrderTaken,

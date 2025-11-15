@@ -1,38 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext.jsx';
-import { REALTIME_STREAM_URL } from '../utils/config.js';
-
-const KNOWN_EVENTS = [
-  'realtime:ready',
-  'realtime:error',
-  'ping',
-  'order:new',
-  'order:updated',
-  'order:progress',
-  'order:available',
-  'order:taken',
-  'order:driverAccepted',
-  'order:pickedUp',
-  'order:delivered',
-  'payout:completed',
-  'payout:auto'
-];
+import { SOCKET_BASE_URL } from '../utils/config.js';
 
 const RealtimeContext = createContext(null);
 
-function parseEventData(raw) {
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch (error) {
-    return null;
-  }
-}
-
 export function RealtimeProvider({ children }) {
   const { token } = useAuth();
+  const [socket, setSocket] = useState(null);
   const [ready, setReady] = useState(false);
-  const sourceRef = useRef(null);
   const handlersRef = useRef(new Map());
 
   const dispatch = useCallback((eventName, payload) => {
@@ -51,67 +27,75 @@ export function RealtimeProvider({ children }) {
 
   useEffect(() => {
     if (!token) {
-      if (sourceRef.current) {
-        sourceRef.current.close();
-        sourceRef.current = null;
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { io } from 'socket.io-client';
-import { useAuth } from './AuthContext.jsx';
-import { SOCKET_BASE_URL } from '../utils/config.js';
-
-const RealtimeContext = createContext(null);
-
-export function RealtimeProvider({ children }) {
-  const { token } = useAuth();
-  const [socket, setSocket] = useState(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (!token) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
       setReady(false);
-      return;
+      setSocket((current) => {
+        if (current) {
+          current.disconnect();
+        }
+        return null;
+      });
+      return undefined;
     }
 
-    const streamUrl = `${REALTIME_STREAM_URL}?token=${encodeURIComponent(token)}`;
-    const eventSource = new EventSource(streamUrl);
-    sourceRef.current = eventSource;
-    setReady(false);
-
-    const listenerMap = new Map();
-
-    KNOWN_EVENTS.forEach((eventName) => {
-      const listener = (event) => {
-        const payload = parseEventData(event.data);
-        if (eventName === 'realtime:ready') {
-          setReady(true);
-        }
-        if (eventName === 'realtime:error') {
-          setReady(false);
-        }
-        dispatch(eventName, payload);
-      };
-      listenerMap.set(eventName, listener);
-      eventSource.addEventListener(eventName, listener);
+    const instance = io(SOCKET_BASE_URL, {
+      transports: ['websocket'],
+      autoConnect: false
     });
 
-    const errorListener = () => {
+    setSocket(instance);
+    setReady(false);
+
+    const handleConnect = () => {
+      instance.emit('register', { token });
+    };
+
+    const handleReady = (payload) => {
+      setReady(true);
+      dispatch('realtime:ready', payload);
+    };
+
+    const handleError = (payload) => {
+      setReady(false);
+      dispatch('realtime:error', payload);
+      instance.disconnect();
+    };
+
+    const handleDisconnect = () => {
       setReady(false);
     };
-    eventSource.addEventListener('error', errorListener);
+
+    const handleConnectError = (error) => {
+      setReady(false);
+      dispatch('realtime:error', { message: error?.message || 'Connection failed' });
+    };
+
+    const handleAny = (eventName, ...args) => {
+      if (eventName === 'realtime:ready' || eventName === 'realtime:error') {
+        return;
+      }
+      const payload = args.length > 1 ? args : args[0];
+      dispatch(eventName, payload);
+    };
+
+    instance.on('connect', handleConnect);
+    instance.on('realtime:ready', handleReady);
+    instance.on('realtime:error', handleError);
+    instance.on('disconnect', handleDisconnect);
+    instance.on('connect_error', handleConnectError);
+    instance.onAny(handleAny);
+
+    instance.connect();
 
     return () => {
-      listenerMap.forEach((listener, eventName) => {
-        eventSource.removeEventListener(eventName, listener);
-      });
-      eventSource.removeEventListener('error', errorListener);
-      eventSource.close();
-      if (sourceRef.current === eventSource) {
-        sourceRef.current = null;
-      }
+      instance.off('connect', handleConnect);
+      instance.off('realtime:ready', handleReady);
+      instance.off('realtime:error', handleError);
+      instance.off('disconnect', handleDisconnect);
+      instance.off('connect_error', handleConnectError);
+      instance.offAny(handleAny);
+      instance.disconnect();
+      setReady(false);
+      setSocket((current) => (current === instance ? null : current));
     };
   }, [token, dispatch]);
 
@@ -134,44 +118,7 @@ export function RealtimeProvider({ children }) {
     };
   }, []);
 
-  const value = useMemo(() => ({ ready, subscribe }), [ready, subscribe]);
-    const instance = io(SOCKET_BASE_URL, {
-      transports: ['websocket'],
-      autoConnect: false
-    });
-
-    setSocket(instance);
-    setReady(false);
-
-    const handleConnect = () => {
-      instance.emit('register', { token });
-    };
-    const handleReady = () => setReady(true);
-    const handleError = () => {
-      setReady(false);
-      instance.disconnect();
-    };
-    const handleDisconnect = () => setReady(false);
-
-    instance.on('connect', handleConnect);
-    instance.on('realtime:ready', handleReady);
-    instance.on('realtime:error', handleError);
-    instance.on('disconnect', handleDisconnect);
-
-    instance.connect();
-
-    return () => {
-      instance.off('connect', handleConnect);
-      instance.off('realtime:ready', handleReady);
-      instance.off('realtime:error', handleError);
-      instance.off('disconnect', handleDisconnect);
-      instance.disconnect();
-      setReady(false);
-      setSocket((current) => (current === instance ? null : current));
-    };
-  }, [token]);
-
-  const value = useMemo(() => ({ socket, ready }), [socket, ready]);
+  const value = useMemo(() => ({ socket, ready, subscribe }), [socket, ready, subscribe]);
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }
