@@ -1,0 +1,133 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f7f7f7;
+  color: #202020;
+}
+
+.app-header {
+  padding: 2rem 1.5rem;
+  background: linear-gradient(135deg, #ff7a18, #ffb347);
+  color: #fff;
+  text-align: center;
+}
+
+main {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.restaurants,
+.cart {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.restaurant {
+  padding: 1rem 0;
+  border-bottom: 1px solid #ececec;
+}
+
+.restaurant:last-child {
+  border-bottom: none;
+}
+
+.restaurant-name {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.restaurant-meta {
+  margin: 0.35rem 0 0.75rem;
+  color: #666;
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.menu li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f3f3f3;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.add-item {
+  border: none;
+  background: #ff7a18;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.add-item:hover {
+  background: #e06700;
+}
+
+.cart-items {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f3f3f3;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.cart-item .remove {
+  border: none;
+  background: none;
+  color: #ff7a18;
+  cursor: pointer;
+}
+
+.primary {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-status {
+  margin-top: 1rem;
+  min-height: 1.5rem;
+  font-weight: 600;
+}

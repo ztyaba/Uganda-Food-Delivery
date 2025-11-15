@@ -1,0 +1,44 @@
+{
+  "restaurants": [
+    {
+      "id": "lakeside-grill",
+      "name": "Lakeside Grill",
+      "cuisine": "Ugandan",
+      "deliveryFee": 3000,
+      "estimatedTime": 35,
+      "image": "images/lakeside.jpg",
+      "menu": [
+        { "id": "tilapia", "name": "Grilled Tilapia", "price": 18000 },
+        { "id": "matooke", "name": "Matooke Plate", "price": 12000 },
+        { "id": "rolex", "name": "Rolex Wrap", "price": 5000 }
+      ]
+    },
+    {
+      "id": "garden-veggies",
+      "name": "Garden Veggies",
+      "cuisine": "Vegetarian",
+      "deliveryFee": 2500,
+      "estimatedTime": 28,
+      "image": "images/veggies.jpg",
+      "menu": [
+        { "id": "bean-stew", "name": "Bean Stew", "price": 9000 },
+        { "id": "chapati", "name": "Chapati Wrap", "price": 6000 },
+        { "id": "veggie-bowl", "name": "Veggie Bowl", "price": 10000 }
+      ]
+    },
+    {
+      "id": "kampala-bites",
+      "name": "Kampala Bites",
+      "cuisine": "Street Food",
+      "deliveryFee": 2000,
+      "estimatedTime": 22,
+      "image": "images/kampala.jpg",
+      "menu": [
+        { "id": "samosa", "name": "Samosa", "price": 3000 },
+        { "id": "bbq-stick", "name": "BBQ Stick", "price": 4000 },
+        { "id": "cassava-fries", "name": "Cassava Fries", "price": 3500 }
+      ]
+    }
+  ],
+  "orders": []
+}

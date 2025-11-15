@@ -1,0 +1,11 @@
+{
+  "name": "uganda-food-delivery-server",
+  "version": "0.1.0",
+  "description": "Simple food delivery API server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "author": "",
+  "license": "MIT"
+}
