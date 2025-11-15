@@ -12,6 +12,7 @@ function formatCountdown(seconds) {
 
 export default function VendorOrders() {
   const api = useApi();
+  const { ready, subscribe } = useRealtime();
   const { socket } = useRealtime();
   const [orders, setOrders] = useState([]);
   const [updating, setUpdating] = useState(null);
@@ -67,6 +68,7 @@ export default function VendorOrders() {
   );
 
   useEffect(() => {
+    if (!ready) return undefined;
     if (!socket) return undefined;
     const handleUpdated = (payload) => {
       if (payload?.order) {
@@ -105,6 +107,24 @@ export default function VendorOrders() {
       }
     };
 
+    const offUpdated = subscribe('order:updated', handleUpdated);
+    const offNew = subscribe('order:new', handleNew);
+    const offAccepted = subscribe('order:driverAccepted', handleDriverAccepted);
+    const offPicked = subscribe('order:pickedUp', handlePickedUp);
+    const offDelivered = subscribe('order:delivered', handleDelivered);
+    const offPayoutComplete = subscribe('payout:completed', handlePayoutCompleted);
+    const offPayoutAuto = subscribe('payout:auto', handlePayoutAuto);
+
+    return () => {
+      offUpdated();
+      offNew();
+      offAccepted();
+      offPicked();
+      offDelivered();
+      offPayoutComplete();
+      offPayoutAuto();
+    };
+  }, [ready, subscribe, applyOrderUpdate, pushAlert]);
     socket.on('order:updated', handleUpdated);
     socket.on('order:new', handleNew);
     socket.on('order:driverAccepted', handleDriverAccepted);

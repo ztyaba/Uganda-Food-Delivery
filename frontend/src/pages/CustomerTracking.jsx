@@ -9,6 +9,7 @@ import { useRealtime } from '../contexts/RealtimeContext.jsx';
 export default function CustomerTracking() {
   const { id } = useParams();
   const api = useApi();
+  const { ready, subscribe } = useRealtime();
   const { socket } = useRealtime();
   const [order, setOrder] = useState(null);
 
@@ -16,6 +17,27 @@ export default function CustomerTracking() {
     api.get(`/customer/orders/${id}`).then((response) => setOrder(response.data.order));
   }, [api, id]);
 
+  useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  useEffect(() => {
+    if (!ready) return undefined;
+    const offUpdated = subscribe('order:updated', (payload) => {
+      if (payload?.order?.id === id) {
+        setOrder(payload.order);
+      }
+    });
+    const offProgress = subscribe('order:progress', (payload) => {
+      if (payload?.orderId === id) {
+        loadOrder();
+      }
+    });
+    return () => {
+      offUpdated();
+      offProgress();
+    };
+  }, [ready, subscribe, id, loadOrder]);
   useEffect(() => {
     loadOrder();
   }, [loadOrder]);

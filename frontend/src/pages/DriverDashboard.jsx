@@ -8,6 +8,7 @@ import { useRealtime } from '../contexts/RealtimeContext.jsx';
 export default function DriverDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { ready, subscribe } = useRealtime();
   const { socket } = useRealtime();
 
   const loadDashboard = useCallback(() => {
@@ -19,6 +20,21 @@ export default function DriverDashboard() {
   }, [loadDashboard]);
 
   useEffect(() => {
+    if (!ready) return undefined;
+    const refresh = () => loadDashboard();
+    const offAvailable = subscribe('order:available', refresh);
+    const offUpdated = subscribe('order:updated', refresh);
+    const offTaken = subscribe('order:taken', refresh);
+    const offPaid = subscribe('payout:completed', refresh);
+    const offAuto = subscribe('payout:auto', refresh);
+    return () => {
+      offAvailable();
+      offUpdated();
+      offTaken();
+      offPaid();
+      offAuto();
+    };
+  }, [ready, subscribe, loadDashboard]);
     if (!socket) return undefined;
     const refresh = () => loadDashboard();
     socket.on('order:available', refresh);

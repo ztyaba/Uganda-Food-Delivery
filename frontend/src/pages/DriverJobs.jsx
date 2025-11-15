@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 
 export default function DriverJobs() {
   const api = useApi();
+  const { ready, subscribe } = useRealtime();
   const { socket } = useRealtime();
   const { user } = useAuth();
   const userId = user?.id;
@@ -59,6 +60,7 @@ export default function DriverJobs() {
   );
 
   useEffect(() => {
+    if (!ready) return undefined;
     if (!socket) return undefined;
     const handleAvailable = (payload) => {
       if (payload?.order) {
@@ -78,6 +80,16 @@ export default function DriverJobs() {
       }
     };
 
+    const offAvailable = subscribe('order:available', handleAvailable);
+    const offUpdated = subscribe('order:updated', handleUpdated);
+    const offTaken = subscribe('order:taken', handleTaken);
+
+    return () => {
+      offAvailable();
+      offUpdated();
+      offTaken();
+    };
+  }, [ready, subscribe, applyOrderUpdate, userId]);
     socket.on('order:available', handleAvailable);
     socket.on('order:updated', handleUpdated);
     socket.on('order:taken', handleTaken);

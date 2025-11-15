@@ -7,6 +7,7 @@ import { useRealtime } from '../contexts/RealtimeContext.jsx';
 export default function VendorDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { ready, subscribe } = useRealtime();
   const { socket } = useRealtime();
 
   const loadDashboard = useCallback(() => {
@@ -18,6 +19,25 @@ export default function VendorDashboard() {
   }, [loadDashboard]);
 
   useEffect(() => {
+    if (!ready) return undefined;
+    const refresh = () => loadDashboard();
+    const offUpdated = subscribe('order:updated', refresh);
+    const offNew = subscribe('order:new', refresh);
+    const offAccepted = subscribe('order:driverAccepted', refresh);
+    const offPicked = subscribe('order:pickedUp', refresh);
+    const offDelivered = subscribe('order:delivered', refresh);
+    const offPaid = subscribe('payout:completed', refresh);
+    const offAuto = subscribe('payout:auto', refresh);
+    return () => {
+      offUpdated();
+      offNew();
+      offAccepted();
+      offPicked();
+      offDelivered();
+      offPaid();
+      offAuto();
+    };
+  }, [ready, subscribe, loadDashboard]);
     if (!socket) return undefined;
     const refresh = () => loadDashboard();
     socket.on('order:updated', refresh);

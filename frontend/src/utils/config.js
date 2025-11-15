@@ -47,4 +47,5 @@ export function resolveApiBaseUrl() {
 const RESOLVED_API_BASE = resolveApiBaseUrl();
 
 export const API_BASE_URL = RESOLVED_API_BASE;
+export const REALTIME_STREAM_URL = `${RESOLVED_API_BASE}/realtime/stream`;
 export const SOCKET_BASE_URL = RESOLVED_API_BASE.replace(/\/?api$/, '');
