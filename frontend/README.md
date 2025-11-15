@@ -24,6 +24,9 @@ VITE_API_BASE_URL=https://your-api.onrender.com
 
 > **Tip:** Provide the backend origin without a trailing slash. The frontend automatically appends `/api` to reach the REST routes, so `https://your-api.onrender.com` becomes `https://your-api.onrender.com/api`.
 
+VITE_API_BASE_URL=https://your-api.onrender.com/api
+```
+
 ## Available scripts
 - `npm start` – launch the Vite development server (with Tailwind JIT)
 - `npm run build` – generate an optimized production bundle
