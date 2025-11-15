@@ -265,6 +265,53 @@ function ensureDb() {
   }
   if (!existsSync(DB_PATH)) {
     const seed = seedData();
+function ensureDb() {
+  if (!existsSync(DATA_DIR)) {
+    mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!existsSync(DB_PATH)) {
+    const now = new Date().toISOString();
+    const defaultPassword = hashPassword('Dispatch#2024');
+    const seed = {
+      meta: {
+        createdAt: now,
+        updatedAt: now,
+        currency: 'UGX'
+      },
+      users: [
+        {
+          id: randomId('usr_'),
+          name: 'Control Center',
+          email: 'dispatch@ugandafood.app',
+          role: 'dispatcher',
+          password: defaultPassword
+        },
+        {
+          id: randomId('usr_'),
+          name: 'Field Manager',
+          email: 'manager@ugandafood.app',
+          role: 'manager',
+          password: hashPassword('Manager#2024')
+        }
+      ],
+      drivers: [
+        {
+          id: randomId('drv_'),
+          name: 'Amina Nalule',
+          phone: '+256 700 123456',
+          payoutPreference: 'mobile_money'
+        },
+        {
+          id: randomId('drv_'),
+          name: 'Brian Okello',
+          phone: '+256 772 998877',
+          payoutPreference: 'bank_transfer'
+        }
+      ],
+      orders: [],
+      payments: [],
+      events: []
+    };
     writeFileSync(DB_PATH, JSON.stringify(seed, null, 2));
   }
 }
