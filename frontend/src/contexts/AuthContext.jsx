@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/config.js';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -30,6 +32,7 @@ export function AuthProvider({ children }) {
 
   const client = useMemo(() => {
     const instance = axios.create({ baseURL: API_BASE_URL });
+    const instance = axios.create({ baseURL: API_BASE });
     instance.interceptors.request.use((config) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -43,6 +46,7 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${API_BASE}/auth/login`, { email, password });
       setToken(response.data.token);
       setUser(response.data.user);
       return response.data.user;
