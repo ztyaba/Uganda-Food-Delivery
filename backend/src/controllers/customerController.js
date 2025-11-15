@@ -1,6 +1,7 @@
 const { listRestaurants, findRestaurantById } = require('../models/restaurantModel');
 const { createOrder, listOrdersByCustomer, findById } = require('../models/orderModel');
 const { captureOrder, DRIVER_FEE_RATE } = require('../models/walletModel');
+const { notifyOrderUpdate, notifyVendor } = require('../utils/realtime');
 
 function restaurants(req, res, next) {
   try {
@@ -70,6 +71,8 @@ function placeOrder(req, res, next) {
       vendorId: restaurant.vendorId,
       total
     });
+    notifyOrderUpdate(order);
+    notifyVendor(order.vendorId, 'order:new', { order });
     res.status(201).json({
       order,
       settlement
