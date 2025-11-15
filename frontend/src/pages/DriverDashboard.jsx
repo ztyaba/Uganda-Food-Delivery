@@ -1,16 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi.js';
 import WalletSummary from '../components/WalletSummary.jsx';
 import JobCard from '../components/JobCard.jsx';
+import { useRealtime } from '../contexts/RealtimeContext.jsx';
 
 export default function DriverDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { socket } = useRealtime();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     api.get('/driver/dashboard').then((response) => setData(response.data));
   }, [api]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const refresh = () => loadDashboard();
+    socket.on('order:available', refresh);
+    socket.on('order:updated', refresh);
+    socket.on('order:taken', refresh);
+    socket.on('payout:completed', refresh);
+    socket.on('payout:auto', refresh);
+    return () => {
+      socket.off('order:available', refresh);
+      socket.off('order:updated', refresh);
+      socket.off('order:taken', refresh);
+      socket.off('payout:completed', refresh);
+      socket.off('payout:auto', refresh);
+    };
+  }, [socket, loadDashboard]);
 
   if (!data) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;
@@ -34,7 +57,7 @@ export default function DriverDashboard() {
       <WalletSummary wallet={data.summary.wallet} title="Driver wallet" />
       <div className="grid gap-4 md:grid-cols-2">
         {data.available.slice(0, 2).map((order) => (
-          <JobCard key={order.id} order={order} variant="available" />
+          <JobCard key={order.id} order={order} variant="available" disabled />
         ))}
       </div>
     </section>

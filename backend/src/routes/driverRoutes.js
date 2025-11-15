@@ -1,5 +1,12 @@
 const express = require('express');
-const { dashboard, availableOrders, myOrders, acceptOrder, updateStatus } = require('../controllers/driverController');
+const {
+  dashboard,
+  availableOrders,
+  myOrders,
+  acceptOrder,
+  pickedUp,
+  delivered
+} = require('../controllers/driverController');
 const { authenticate, requireRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -9,6 +16,7 @@ router.get('/dashboard', dashboard);
 router.get('/available', availableOrders);
 router.get('/orders', myOrders);
 router.post('/orders/:orderId/accept', acceptOrder);
-router.patch('/orders/:orderId/status', updateStatus);
+router.post('/orders/:orderId/picked-up', pickedUp);
+router.post('/orders/:orderId/delivered', delivered);
 
 module.exports = router;

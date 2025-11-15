@@ -1,15 +1,42 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useApi } from '../hooks/useApi.js';
 import MetricsPanel from '../components/MetricsPanel.jsx';
+import { useRealtime } from '../contexts/RealtimeContext.jsx';
 
 export default function VendorDashboard() {
   const api = useApi();
   const [data, setData] = useState(null);
+  const { socket } = useRealtime();
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
     api.get('/vendor/dashboard').then((response) => setData(response.data));
   }, [api]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+    const refresh = () => loadDashboard();
+    socket.on('order:updated', refresh);
+    socket.on('order:new', refresh);
+    socket.on('order:driverAccepted', refresh);
+    socket.on('order:pickedUp', refresh);
+    socket.on('order:delivered', refresh);
+    socket.on('payout:completed', refresh);
+    socket.on('payout:auto', refresh);
+    return () => {
+      socket.off('order:updated', refresh);
+      socket.off('order:new', refresh);
+      socket.off('order:driverAccepted', refresh);
+      socket.off('order:pickedUp', refresh);
+      socket.off('order:delivered', refresh);
+      socket.off('payout:completed', refresh);
+      socket.off('payout:auto', refresh);
+    };
+  }, [socket, loadDashboard]);
 
   if (!data) {
     return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;

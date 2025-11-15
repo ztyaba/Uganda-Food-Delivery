@@ -44,4 +44,7 @@ export function resolveApiBaseUrl() {
   return DEFAULT_LOCAL_BASE;
 }
 
-export const API_BASE_URL = resolveApiBaseUrl();
+const RESOLVED_API_BASE = resolveApiBaseUrl();
+
+export const API_BASE_URL = RESOLVED_API_BASE;
+export const SOCKET_BASE_URL = RESOLVED_API_BASE.replace(/\/?api$/, '');
