@@ -1,0 +1,26 @@
+{
+  "name": "uganda-food-delivery-backend",
+  "version": "1.0.0",
+  "description": "Backend API for a multi-role food delivery platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "cors": "2.8.5",
+    "express": "4.19.2",
+    "helmet": "7.1.0",
+    "jsonwebtoken": "9.0.2"
+  },
+  "devDependencies": {
+    "eslint": "8.57.0",
+    "eslint-config-standard": "17.1.0",
+    "eslint-plugin-import": "2.29.1",
+    "eslint-plugin-n": "16.6.2",
+    "eslint-plugin-promise": "6.1.1",
+    "nodemon": "3.1.4"
+  }
+}

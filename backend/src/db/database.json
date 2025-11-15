@@ -1,0 +1,125 @@
+{
+  "users": [
+    {
+      "id": "user_customer_1",
+      "role": "customer",
+      "email": "customer@ugandafood.app",
+      "fullName": "Amina N",
+      "passwordHash": "5ca3d91a1f616abd3e4895adee33b88f:a1bdf92b92009867478e011f2843cbce1f556ec1a5ad200fbfa51dc379085cba",
+      "walletId": "wallet_customer_1"
+    },
+    {
+      "id": "user_vendor_1",
+      "role": "vendor",
+      "email": "vendor@ugandafood.app",
+      "fullName": "Jinja Bites",
+      "passwordHash": "f900161cc9b5f6021cdbd7e787c1ecfd:3a8894f444a926f86e12e4b41fe9c95e6121a6b3c7e71db3869599ce65594f5c",
+      "walletId": "wallet_vendor_1"
+    },
+    {
+      "id": "user_driver_1",
+      "role": "driver",
+      "email": "driver@ugandafood.app",
+      "fullName": "Brian K",
+      "passwordHash": "c714f8b1ea7711ce11f4241ea5954aaf:13e4d109c660f1485ff45a2f7ec99840e2a40a06f68fac11638cc5a5e068265a",
+      "walletId": "wallet_driver_1"
+    },
+    {
+      "id": "user_admin_1",
+      "role": "admin",
+      "email": "admin@ugandafood.app",
+      "fullName": "Platform Admin",
+      "passwordHash": "fd6ea214cd4d976afdcf57aa9d9b184a:bb51f437edd613f2121ccedffe6b5d842c0e4eb2a783b92926cf974991347ddc",
+      "walletId": null
+    }
+  ],
+  "restaurants": [
+    {
+      "id": "rest_1",
+      "vendorId": "user_vendor_1",
+      "name": "Jinja Bites",
+      "description": "Signature Ugandan fusion dishes with vibrant spices.",
+      "heroImage": "https://images.unsplash.com/photo-1543336661-7b6d8e6e70d8?auto=format&fit=crop&w=1200&q=80",
+      "cuisine": "Ugandan Fusion",
+      "rating": 4.8,
+      "deliveryEta": "25-35 min",
+      "categories": [
+        "Trending",
+        "Local Favourites"
+      ],
+      "address": "14 Nile Crescent, Kampala",
+      "menu": [
+        {
+          "id": "item_1",
+          "name": "Luwombo Royale",
+          "price": 28000,
+          "description": "Banana leaf steamed chicken with groundnut sauce.",
+          "image": "https://images.unsplash.com/photo-1612874471315-0bd43220cf4b?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "item_2",
+          "name": "Rolex Supreme",
+          "price": 12000,
+          "description": "Loaded chapati roll with eggs, veggies, and beef strips.",
+          "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80"
+        }
+      ]
+    },
+    {
+      "id": "rest_2",
+      "vendorId": "user_vendor_1",
+      "name": "Kampala Vegan Kitchen",
+      "description": "Plant-based delicacies and cold-pressed juices.",
+      "heroImage": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80",
+      "cuisine": "Vegan",
+      "rating": 4.6,
+      "deliveryEta": "20-30 min",
+      "categories": [
+        "Healthy",
+        "New"
+      ],
+      "address": "1 Acacia Avenue, Kampala",
+      "menu": [
+        {
+          "id": "item_3",
+          "name": "Matooke Bowl",
+          "price": 18000,
+          "description": "Steamed plantain with coconut curry and roasted veggies.",
+          "image": "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80"
+        },
+        {
+          "id": "item_4",
+          "name": "Sunrise Juice",
+          "price": 9000,
+          "description": "Pineapple, mango, and ginger with chia seeds.",
+          "image": "https://images.unsplash.com/photo-1542435503-956c469947f6?auto=format&fit=crop&w=800&q=80"
+        }
+      ]
+    }
+  ],
+  "orders": [],
+  "wallets": [
+    {
+      "id": "wallet_customer_1",
+      "ownerType": "customer",
+      "ownerId": "user_customer_1",
+      "balance": 200000,
+      "pending": 0
+    },
+    {
+      "id": "wallet_vendor_1",
+      "ownerType": "vendor",
+      "ownerId": "user_vendor_1",
+      "balance": 0,
+      "pending": 0
+    },
+    {
+      "id": "wallet_driver_1",
+      "ownerType": "driver",
+      "ownerId": "user_driver_1",
+      "balance": 0,
+      "pending": 0
+    }
+  ],
+  "notifications": []
+}
