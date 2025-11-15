@@ -20,6 +20,7 @@ export default function VendorDashboard() {
   useEffect(() => {
     if (!socket) return undefined;
     const refresh = () => loadDashboard();
+    socket.on('order:updated', refresh);
     socket.on('order:new', refresh);
     socket.on('order:driverAccepted', refresh);
     socket.on('order:pickedUp', refresh);
@@ -27,6 +28,7 @@ export default function VendorDashboard() {
     socket.on('payout:completed', refresh);
     socket.on('payout:auto', refresh);
     return () => {
+      socket.off('order:updated', refresh);
       socket.off('order:new', refresh);
       socket.off('order:driverAccepted', refresh);
       socket.off('order:pickedUp', refresh);
