@@ -1,0 +1,53 @@
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { useApi } from '../hooks/useApi.js';
+import MetricsPanel from '../components/MetricsPanel.jsx';
+
+export default function VendorDashboard() {
+  const api = useApi();
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    api.get('/vendor/dashboard').then((response) => setData(response.data));
+  }, [api]);
+
+  if (!data) {
+    return <div className="h-32 animate-pulse rounded-3xl bg-white/70" />;
+  }
+
+  return (
+    <section className="space-y-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-3xl font-black text-ink">Kitchen control centre</h2>
+          <p className="text-sm text-slate-500">Track incoming orders and monitor wallet balances in real-time.</p>
+        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-full bg-brand-50 px-4 py-2 text-xs font-semibold text-brand-600"
+        >
+          {data.restaurants.length} restaurants live
+        </motion.div>
+      </div>
+      <MetricsPanel metrics={data.metrics} />
+      <div className="glass-panel rounded-3xl p-6">
+        <h3 className="text-lg font-semibold text-ink">Live orders</h3>
+        <div className="mt-4 space-y-4">
+          {data.metrics.pendingOrders === 0 && <p className="text-sm text-slate-500">No pending orders 🎉</p>}
+          {data.restaurants.map((restaurant) => (
+            <div key={restaurant.id} className="rounded-3xl bg-white/80 p-4 shadow-card">
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-semibold text-ink">{restaurant.name}</h4>
+                <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600">
+                  {restaurant.menu.length} menu items
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate-500">{restaurant.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
